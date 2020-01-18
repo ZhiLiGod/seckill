@@ -1,5 +1,7 @@
 package com.seckill.dtos;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,6 +19,8 @@ public class UserDto {
   private String telephone;
   private String registerMode;
   private String thirdPartyId;
+
+  @JsonIgnore
   private String encrptPwd;
 
 }
