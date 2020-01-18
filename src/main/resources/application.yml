@@ -3,3 +3,12 @@ server:
   
 mybatis:
   mapperLocations: classpath:mapping/*.xml
+  
+spring:
+  datasource:
+    name: seckill
+    url: jdbc:mysql://localhost:3306/seckill
+    username: root
+    password: lizhimysql
+    type: com.alibaba.druid.pool.DruidDataSource
+    driverClassName: com.mysql.jdbc.Driver
