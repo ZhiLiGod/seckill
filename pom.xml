@@ -102,7 +102,7 @@
 				<configuration>
 					<!-- allow generate multiple times -->
 					<verbose>true</verbose>
-					<overwrite>true</overwrite>
+					<overwrite>false</overwrite>
 					<configurationFile>
 						src/main/resources/mybatis-generator.xml
 					</configurationFile>
