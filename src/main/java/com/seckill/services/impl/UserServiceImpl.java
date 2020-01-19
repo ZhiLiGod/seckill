@@ -4,15 +4,22 @@ import javax.validation.Valid;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.alibaba.druid.util.StringUtils;
 import com.seckill.dao.UserInfoMapper;
 import com.seckill.dao.UserPasswordMapper;
+import com.seckill.dtos.LoginDto;
 import com.seckill.dtos.UserDto;
+import com.seckill.enums.BusinessError;
+import com.seckill.errors.BusinessException;
 import com.seckill.models.UserInfo;
 import com.seckill.models.UserPassword;
 import com.seckill.services.UserService;
+import com.seckill.validator.ValidationResult;
+import com.seckill.validator.ValidatorImpl;
 
 import lombok.NonNull;
 
@@ -24,6 +31,9 @@ public class UserServiceImpl implements UserService {
 
   @Autowired
   private UserPasswordMapper userPasswordMapper;
+
+  @Autowired
+  private ValidatorImpl validatorImpl;
 
   @Override
   public UserDto getUserById(Integer id) {
@@ -50,11 +60,22 @@ public class UserServiceImpl implements UserService {
 
   @Override
   @Transactional
-  public void register(@Valid @NonNull UserDto user) {
+  public void register(@NonNull UserDto user) throws BusinessException {
+    ValidationResult valid = validatorImpl.validate(user);
+
+    if (valid.isHasErrors()) {
+      throw new BusinessException(BusinessError.PARAMETER_VALIDATION_ERROR, valid.getErrMsg());
+    }
+
     UserInfo ui = convertUserInfo(user);
     UserPassword up = convertUserPassword(user);
 
-    userInfoMapper.insertSelective(ui);
+    try {
+      userInfoMapper.insertSelective(ui);
+    } catch (DuplicateKeyException e) {
+      throw new BusinessException(BusinessError.PARAMETER_VALIDATION_ERROR, "Duplicate Telephone");
+    }
+
     userPasswordMapper.insertSelective(up);
   }
 
@@ -71,6 +92,21 @@ public class UserServiceImpl implements UserService {
     up.setUserId(dto.getId());
 
     return up;
+  }
+
+  @Override
+  public void login(@Valid @NonNull LoginDto loginDto) throws BusinessException {
+    UserInfo ui = userInfoMapper.selectByTelephone(loginDto.getTelephone());
+
+    if (ui == null) {
+      throw new BusinessException(BusinessError.USER_LOGIN_FAILED);
+    }
+
+    UserPassword up = userPasswordMapper.selectByUserId(ui.getId());
+
+    if (!StringUtils.equals(up.getEncrptPassword(), loginDto.getPassword())) {
+      throw new BusinessException(BusinessError.USER_LOGIN_FAILED);
+    }
   }
 
 }

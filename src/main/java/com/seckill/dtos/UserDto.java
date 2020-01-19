@@ -1,6 +1,7 @@
 package com.seckill.dtos;
 
-import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -17,11 +18,11 @@ public class UserDto {
 
   private Integer id;
 
-  @NotEmpty
+  @NotBlank
   private String name;
-  @NotEmpty
+  @NotNull
   private Byte gender;
-  @NotEmpty
+  @NotBlank
   private String telephone;
 
   private String registerMode;

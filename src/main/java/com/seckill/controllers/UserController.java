@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.alibaba.druid.util.StringUtils;
+import com.seckill.dtos.LoginDto;
 import com.seckill.dtos.UserDto;
 import com.seckill.enums.BusinessError;
 import com.seckill.errors.BusinessException;
@@ -73,6 +74,14 @@ public class UserController {
     }
 
     userService.register(user);
+    return CommonReturnType.create();
+  }
+
+  @PostMapping("/login")
+  public CommonReturnType login(@Valid @RequestBody LoginDto loginDto) throws BusinessException {
+    userService.login(loginDto);
+    httpServletRequest.setAttribute("IS_LOGIN", true);
+
     return CommonReturnType.create();
   }
 
