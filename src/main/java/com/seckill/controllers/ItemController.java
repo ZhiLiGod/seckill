@@ -33,4 +33,9 @@ public class ItemController {
     return CommonReturnType.create(itemService.getItemById(id));
   }
 
+  @GetMapping("/all-items")
+  public CommonReturnType getAllItems() {
+    return CommonReturnType.create(itemService.listItems());
+  }
+
 }

@@ -2,6 +2,7 @@ package com.seckill.services.impl;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,8 +55,13 @@ public class ItemServiceImpl implements ItemService {
 
   @Override
   public List<ItemDto> listItems() {
-    // TODO Auto-generated method stub
-    return null;
+    // @formatter:off
+    return itemMapper.selectAll().stream()
+        .map(i -> {
+          Stock stock = stockMapper.selectByItemId(i.getId());
+          return convertFromItemAndStock(i, stock);
+        }).collect(Collectors.toList());
+    // @formatter:on
   }
 
   @Override
