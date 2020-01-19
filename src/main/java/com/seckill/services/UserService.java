@@ -6,4 +6,6 @@ public interface UserService {
 
   UserDto getUserById(Integer id);
 
+  void register(UserDto user);
+
 }

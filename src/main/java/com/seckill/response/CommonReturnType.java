@@ -10,6 +10,10 @@ public class CommonReturnType {
   private String status;
   private Object data;
 
+  public static CommonReturnType create() {
+    return create(null, ResponseStatus.SUCCESS);
+  }
+
   public static CommonReturnType create(Object result) {
     return create(result, ResponseStatus.SUCCESS);
   }

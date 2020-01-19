@@ -1,8 +1,11 @@
 package com.seckill.services.impl;
 
+import javax.validation.Valid;
+
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.seckill.dao.UserInfoMapper;
 import com.seckill.dao.UserPasswordMapper;
@@ -43,6 +46,31 @@ public class UserServiceImpl implements UserService {
     }
 
     return dto;
+  }
+
+  @Override
+  @Transactional
+  public void register(@Valid @NonNull UserDto user) {
+    UserInfo ui = convertUserInfo(user);
+    UserPassword up = convertUserPassword(user);
+
+    userInfoMapper.insertSelective(ui);
+    userPasswordMapper.insertSelective(up);
+  }
+
+  private UserInfo convertUserInfo(UserDto dto) {
+    UserInfo ui = new UserInfo();
+    BeanUtils.copyProperties(dto, ui);
+
+    return ui;
+  }
+
+  private UserPassword convertUserPassword(UserDto dto) {
+    UserPassword up = new UserPassword();
+    up.setEncrptPassword(dto.getEncrptPwd());
+    up.setUserId(dto.getId());
+
+    return up;
   }
 
 }
