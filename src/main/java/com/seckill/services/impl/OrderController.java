@@ -27,8 +27,9 @@ public class OrderController {
   @Autowired
   private HttpServletRequest httpServletRequest;
 
-  @PostMapping("/create/{itemId}/{amount}")
-  public CommonReturnType createOrder(@PathVariable final Integer itemId, @PathVariable final Integer amount) throws BusinessException {
+  @PostMapping("/create/{itemId}/{amount}/{promoId}")
+  public CommonReturnType createOrder(@PathVariable final Integer itemId, @PathVariable final Integer amount, @PathVariable final Integer promoId)
+      throws BusinessException {
     Boolean isLogin = (Boolean) httpServletRequest.getSession().getAttribute("IS_LOGIN");
 
     if (isLogin == null || !isLogin) {
@@ -36,7 +37,7 @@ public class OrderController {
     }
 
     UserDto userDto = (UserDto) httpServletRequest.getSession().getAttribute("LOGIN_USER");
-    OrderDto orderDto = orderService.createOrder(userDto.getId(), itemId, amount);
+    OrderDto orderDto = orderService.createOrder(userDto.getId(), itemId, amount, promoId);
 
     return CommonReturnType.create(orderDto);
   }

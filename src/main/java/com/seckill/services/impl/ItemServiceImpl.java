@@ -12,11 +12,14 @@ import org.springframework.transaction.annotation.Transactional;
 import com.seckill.dao.ItemMapper;
 import com.seckill.dao.StockMapper;
 import com.seckill.dtos.ItemDto;
+import com.seckill.dtos.PromoDto;
+import com.seckill.dtos.PromoDto.PromoStatus;
 import com.seckill.enums.BusinessError;
 import com.seckill.errors.BusinessException;
 import com.seckill.models.Item;
 import com.seckill.models.Stock;
 import com.seckill.services.ItemService;
+import com.seckill.services.PromoService;
 import com.seckill.validator.ValidationResult;
 import com.seckill.validator.ValidatorImpl;
 
@@ -33,6 +36,9 @@ public class ItemServiceImpl implements ItemService {
 
   @Autowired
   private ValidatorImpl validatorImpl;
+
+  @Autowired
+  private PromoService promoService;
 
   @Override
   @Transactional
@@ -111,6 +117,12 @@ public class ItemServiceImpl implements ItemService {
 
     dto.setPrice(BigDecimal.valueOf(item.getPrice()));
     dto.setStock(stock.getStock());
+
+    PromoDto promoDto = promoService.getPromoByItemId(item.getId());
+
+    if (promoDto != null && !PromoStatus.END.equals(promoDto.getStatus())) {
+      dto.setPromoDto(promoDto);
+    }
 
     return dto;
   }

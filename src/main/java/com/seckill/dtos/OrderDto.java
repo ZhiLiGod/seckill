@@ -13,5 +13,6 @@ public class OrderDto {
   private BigDecimal itemPrice;
   private Integer amount;
   private BigDecimal orderPrice;
+  private Integer promoId;
 
 }

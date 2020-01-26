@@ -31,4 +31,6 @@ public class ItemDto {
   @NotBlank(message = "Cannot be empty")
   private String imageUrl;
 
+  private PromoDto promoDto;
+
 }
