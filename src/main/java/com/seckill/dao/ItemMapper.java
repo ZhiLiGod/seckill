@@ -2,6 +2,8 @@ package com.seckill.dao;
 
 import java.util.List;
 
+import org.apache.ibatis.annotations.Param;
+
 import com.seckill.models.Item;
 
 public interface ItemMapper {
@@ -54,4 +56,6 @@ public interface ItemMapper {
   int updateByPrimaryKey(Item record);
 
   List<Item> selectAll();
+
+  void increaseSales(@Param("id") Integer itemId, @Param("amount") Integer amount);
 }

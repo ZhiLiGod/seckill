@@ -80,6 +80,9 @@ public class OrderServiceImpl implements OrderService {
 
     OrderDto orderDto = new OrderDto();
     BeanUtils.copyProperties(order, orderDto);
+
+    // increase sales
+    itemService.increaseSales(itemId, amount);
     return orderDto;
   }
 

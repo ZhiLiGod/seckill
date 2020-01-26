@@ -83,6 +83,12 @@ public class ItemServiceImpl implements ItemService {
     return affectedRow > 0;
   }
 
+  @Override
+  @Transactional
+  public void increaseSales(Integer itemId, Integer amount) {
+    itemMapper.increaseSales(itemId, amount);
+  }
+
   private Item convertItemFromItemDto(@NonNull ItemDto dto) {
     Item item = new Item();
     BeanUtils.copyProperties(dto, item);
