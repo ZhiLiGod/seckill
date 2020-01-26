@@ -13,4 +13,6 @@ public interface ItemService {
 
   ItemDto getItemById(Integer id);
 
+  boolean reduceStock(Integer itemId, Integer amount);
+
 }

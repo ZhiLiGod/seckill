@@ -7,7 +7,8 @@ public enum BusinessError implements CommonError {
   PARAMETER_VALIDATION_ERROR(10001, "Invalid parameter"),
   UNKNOWN_ERROR(10002, "Unknown error"),
   USER_NOT_EXIST(20001, "User not exist"),
-  USER_LOGIN_FAILED(20002, "Invalid Telephone or Password");
+  USER_LOGIN_FAILED(20002, "Invalid Telephone or Password"),
+  STOCK_NOT_ENOUGH(30001, "Stock Not Enough");
   // @formatter:on
 
   private int errCode;
