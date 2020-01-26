@@ -32,7 +32,7 @@ public class OrderController {
     Boolean isLogin = (Boolean) httpServletRequest.getSession().getAttribute("IS_LOGIN");
 
     if (isLogin == null || !isLogin) {
-      throw new BusinessException(BusinessError.PARAMETER_VALIDATION_ERROR, "No User Login");
+      throw new BusinessException(BusinessError.USER_NOT_LOGIN);
     }
 
     UserDto userDto = (UserDto) httpServletRequest.getSession().getAttribute("LOGIN_USER");
