@@ -1,6 +1,11 @@
 server:
   port: 8081
-  
+  # optimize tomcat
+  tomcat:
+    accept-count: 1000
+    max-threads: 800
+    min-spare-threads: 100
+
 mybatis:
   mapperLocations: classpath:mapping/*.xml
   
