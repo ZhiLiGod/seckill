@@ -3,8 +3,12 @@ server:
   # optimize tomcat
   tomcat:
     accept-count: 1000
-    max-threads: 800
+    max-threads: 800 # 4 core 8GB RAM server
     min-spare-threads: 100
+    accesslog:
+      enabled: true
+      directory: /var/www/seckill/tomcat
+      pattern: %h %l %u %t %r %s %b %D
 
 mybatis:
   mapperLocations: classpath:mapping/*.xml
@@ -17,3 +21,12 @@ spring:
     password: lizhimysql
     type: com.alibaba.druid.pool.DruidDataSource
     driverClassName: com.mysql.jdbc.Driver
+  redis:
+    host: 127.0.0.1
+    database: 10
+    port: 6379
+    #password
+    jedis:
+      pool:
+        max-active: 50
+        min-idle: 20
