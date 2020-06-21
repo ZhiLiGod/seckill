@@ -1,5 +1,6 @@
 package com.seckill.dtos;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 import javax.validation.constraints.Min;
@@ -9,7 +10,7 @@ import javax.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
-public class ItemDto {
+public class ItemDto implements Serializable {
 
   private Integer id;
 

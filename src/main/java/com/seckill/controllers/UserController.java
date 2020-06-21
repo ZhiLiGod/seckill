@@ -3,11 +3,14 @@ package com.seckill.controllers;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Random;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -37,6 +40,9 @@ public class UserController {
 
   @Autowired
   private HttpServletRequest httpServletRequest;
+
+  @Autowired
+  private RedisTemplate redisTemplate;
 
   @GetMapping("/{id}")
   public CommonReturnType getUserById(@PathVariable Integer id) throws BusinessException {
@@ -80,9 +86,16 @@ public class UserController {
   @PostMapping("/login")
   public CommonReturnType login(@Valid @RequestBody LoginDto loginDto) throws BusinessException {
     userService.login(loginDto);
-    httpServletRequest.setAttribute("IS_LOGIN", true);
 
-    return CommonReturnType.create();
+    String uuidToken = UUID.randomUUID().toString();
+    uuidToken = uuidToken.replace("-", "");
+
+    redisTemplate.opsForValue().set(uuidToken, loginDto);
+    redisTemplate.expire(uuidToken, 1, TimeUnit.HOURS);
+
+//    httpServletRequest.setAttribute("IS_LOGIN", true);
+
+    return CommonReturnType.create(uuidToken);
   }
 
 }

@@ -1,6 +1,7 @@
 package com.seckill.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,13 +15,21 @@ import com.seckill.errors.BusinessException;
 import com.seckill.response.CommonReturnType;
 import com.seckill.services.ItemService;
 
+import java.util.concurrent.TimeUnit;
+
 @CrossOrigin(allowCredentials = "true", allowedHeaders = "*")
 @RestController
 @RequestMapping("/item")
 public class ItemController {
 
-  @Autowired
-  private ItemService itemService;
+  private final ItemService itemService;
+
+  private final RedisTemplate redisTemplate;
+
+  public ItemController(ItemService itemService, RedisTemplate redisTemplate) {
+    this.itemService = itemService;
+    this.redisTemplate = redisTemplate;
+  }
 
   @PostMapping("/create")
   public CommonReturnType createItem(@RequestBody ItemDto itemDto) throws BusinessException {
@@ -30,7 +39,19 @@ public class ItemController {
 
   @GetMapping("/{id}")
   public CommonReturnType getItemById(@PathVariable final Integer id) {
-    return CommonReturnType.create(itemService.getItemById(id));
+
+    // find from cache first
+    ItemDto itemDto = (ItemDto) redisTemplate.opsForValue().get("item_" + id);
+
+    if (itemDto == null) {
+      itemDto = itemService.getItemById(id);
+
+      // save cache
+      redisTemplate.opsForValue().set("item_" + id, itemDto);
+      redisTemplate.expire("item_" + id, 10, TimeUnit.MINUTES);
+    }
+
+    return CommonReturnType.create(itemDto);
   }
 
   @GetMapping("/all-items")

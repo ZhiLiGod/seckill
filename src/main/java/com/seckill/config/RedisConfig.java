@@ -1,9 +1,46 @@
 package com.seckill.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import org.springframework.context.annotation.Bean;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.session.data.redis.config.annotation.web.http.EnableRedisHttpSession;
 import org.springframework.stereotype.Component;
+
+import java.time.LocalDateTime;
 
 @Component
 @EnableRedisHttpSession(maxInactiveIntervalInSeconds = 3600)
 public class RedisConfig {
+
+  @Bean
+  public RedisTemplate redisTemplate(RedisConnectionFactory redisConnectionFactory) {
+    RedisTemplate redisTemplate = new RedisTemplate();
+    redisTemplate.setConnectionFactory(redisConnectionFactory);
+
+    // handle key serializable
+    StringRedisSerializer stringRedisSerializer = new StringRedisSerializer();
+    redisTemplate.setKeySerializer(stringRedisSerializer);
+
+    // handle value serializable
+    Jackson2JsonRedisSerializer jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer(Object.class);
+    ObjectMapper objectMapper = new ObjectMapper();
+    SimpleModule simpleModule = new SimpleModule();
+
+    simpleModule.addSerializer(LocalDateTime.class, new LocalDateTimeJsonSerializer());
+    simpleModule.addDeserializer(LocalDateTime.class, new LocalDateTimeJsonDeserializer());
+
+    // show class and field info in cache
+    objectMapper.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
+    objectMapper.registerModule(simpleModule);
+
+    jackson2JsonRedisSerializer.setObjectMapper(objectMapper);
+    redisTemplate.setValueSerializer(jackson2JsonRedisSerializer);
+
+    return redisTemplate;
+  }
+
 }
