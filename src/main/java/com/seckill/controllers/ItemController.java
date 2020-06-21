@@ -1,5 +1,6 @@
 package com.seckill.controllers;
 
+import com.seckill.services.CacheService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -26,9 +27,12 @@ public class ItemController {
 
   private final RedisTemplate redisTemplate;
 
-  public ItemController(ItemService itemService, RedisTemplate redisTemplate) {
+  private final CacheService cacheService;
+
+  public ItemController(ItemService itemService, RedisTemplate redisTemplate, CacheService cacheService) {
     this.itemService = itemService;
     this.redisTemplate = redisTemplate;
+    this.cacheService = cacheService;
   }
 
   @PostMapping("/create")
@@ -40,15 +44,22 @@ public class ItemController {
   @GetMapping("/{id}")
   public CommonReturnType getItemById(@PathVariable final Integer id) {
 
-    // find from cache first
-    ItemDto itemDto = (ItemDto) redisTemplate.opsForValue().get("item_" + id);
+    // find from local cache from guava cache
+    ItemDto itemDto = (ItemDto) cacheService.getFromCommonCache("item_" + id);
 
     if (itemDto == null) {
-      itemDto = itemService.getItemById(id);
+      // find from cache first
+      itemDto = (ItemDto) redisTemplate.opsForValue().get("item_" + id);
 
-      // save cache
-      redisTemplate.opsForValue().set("item_" + id, itemDto);
-      redisTemplate.expire("item_" + id, 10, TimeUnit.MINUTES);
+      if (itemDto == null) {
+        itemDto = itemService.getItemById(id);
+
+        // save cache
+        redisTemplate.opsForValue().set("item_" + id, itemDto);
+        redisTemplate.expire("item_" + id, 10, TimeUnit.MINUTES);
+      }
+
+      cacheService.setCommonCache("item_" + id, itemDto);
     }
 
     return CommonReturnType.create(itemDto);
