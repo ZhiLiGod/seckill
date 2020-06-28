@@ -1,10 +1,12 @@
 package com.seckill.controllers;
 
+import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 
 import com.seckill.rocketmq.MqProducer;
 import com.seckill.services.ItemService;
 import com.seckill.services.PromoService;
+import jdk.nashorn.internal.codegen.CompilerConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.util.StringUtils;
@@ -16,6 +18,8 @@ import com.seckill.enums.BusinessError;
 import com.seckill.errors.BusinessException;
 import com.seckill.response.CommonReturnType;
 import com.seckill.services.OrderService;
+
+import java.util.concurrent.*;
 
 @RestController
 @RequestMapping("/order")
@@ -39,6 +43,13 @@ public class OrderController {
 
   @Autowired
   private PromoService promoService;
+
+  private ExecutorService executorService;
+
+  @PostConstruct
+  public void init() {
+    executorService = Executors.newFixedThreadPool(20);
+  }
 
   @PostMapping("/create/{itemId}/{amount}/{promoId}")
   public CommonReturnType createOrder(@PathVariable final Integer itemId,
@@ -65,10 +76,29 @@ public class OrderController {
       }
     }
 
-    String stockLogId = itemService.initStockLog(itemId, amount);
+    // use queue to reduce huge requests (队列泄洪)
+    // handle 20 requests same time
+    Future<Object> future = executorService.submit(new Callable<Object>() {
 
-    if (!mqProducer.transactionAsyncReduceStock(userDto.getId(), itemId, amount, promoId, stockLogId)) {
-      throw new BusinessException(BusinessError.UNKNOWN_ERROR, "Place order failed");
+      @Override
+      public Object call() throws Exception {
+        String stockLogId = itemService.initStockLog(itemId, amount);
+
+        if (!mqProducer.transactionAsyncReduceStock(userDto.getId(), itemId, amount, promoId, stockLogId)) {
+          throw new BusinessException(BusinessError.UNKNOWN_ERROR, "Place order failed");
+        }
+
+        return null;
+      }
+
+    });
+
+    try {
+      future.get();
+    } catch (InterruptedException e) {
+      throw new BusinessException(BusinessError.UNKNOWN_ERROR);
+    } catch (ExecutionException e) {
+      throw new BusinessException(BusinessError.UNKNOWN_ERROR);
     }
 
     return CommonReturnType.create(null);
