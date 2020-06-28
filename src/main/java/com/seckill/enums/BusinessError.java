@@ -9,7 +9,8 @@ public enum BusinessError implements CommonError {
   USER_NOT_EXIST(20001, "User not exist"),
   USER_LOGIN_FAILED(20002, "Invalid Telephone or Password"),
   USER_NOT_LOGIN(20003, "User Not Login"),
-  STOCK_NOT_ENOUGH(30001, "Stock Not Enough");
+  STOCK_NOT_ENOUGH(30001, "Stock Not Enough"),
+  MQ_SEND_FAILED(30002, "Stock async message failed");
   // @formatter:on
 
   private int errCode;

@@ -25,6 +25,8 @@ import com.seckill.services.ItemService;
 import com.seckill.services.OrderService;
 import com.seckill.services.PromoService;
 import com.seckill.services.UserService;
+import org.springframework.transaction.support.TransactionSynchronizationAdapter;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -108,6 +110,25 @@ public class OrderServiceImpl implements OrderService {
 
     // increase sales
     itemService.increaseSales(itemId, amount);
+
+    TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+
+      @Override
+      public void afterCommit() {
+        // async update stock
+        boolean mqResult = itemService.asyncReduceStock(itemId, amount);
+
+//        if (!mqResult) {
+//          itemService.increaseStock(itemId, amount);
+//          throw new BusinessException(BusinessError.MQ_SEND_FAILED);
+//        }
+      }
+
+    });
+
+
+
+
     return orderDto;
   }
 

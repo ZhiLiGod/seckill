@@ -103,15 +103,15 @@ public class ItemServiceImpl implements ItemService {
     long result = redisTemplate.opsForValue().increment("promo_item_stock_" + itemId, (amount * -1));
 
     if (result >= 0) {
-      boolean isSuccess = producer.asyncReduceStock(itemId, amount);
-
-      if (!isSuccess) {
-        redisTemplate.opsForValue().increment("promo_item_stock_" + itemId, amount);
-      }
+//      boolean isSuccess = producer.asyncReduceStock(itemId, amount);
+//
+//      if (!isSuccess) {
+//        redisTemplate.opsForValue().increment("promo_item_stock_" + itemId, amount);
+//      }
 
       return true;
     } else {
-      redisTemplate.opsForValue().increment("promo_item_stock_" + itemId, amount);
+      increaseStock(itemId, amount);
       return false;
     }
   }
@@ -133,6 +133,17 @@ public class ItemServiceImpl implements ItemService {
     }
 
     return item;
+  }
+
+  @Override
+  public boolean asyncReduceStock(Integer itemId, Integer amount) {
+    return producer.asyncReduceStock(itemId, amount);
+  }
+
+  @Override
+  public boolean increaseStock(Integer itemId, Integer amount) {
+    redisTemplate.opsForValue().increment("promo_item_stock_" + itemId, amount);
+    return true;
   }
 
   private Item convertItemFromItemDto(@NonNull ItemDto dto) {

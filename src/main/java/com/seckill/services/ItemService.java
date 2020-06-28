@@ -20,4 +20,10 @@ public interface ItemService {
   // validate item and promo
   ItemDto getItemByIdInCache(Integer id);
 
+  // async update stock
+  boolean asyncReduceStock(Integer itemId, Integer amount);
+
+  // rollback stock
+  boolean increaseStock(Integer itemId, Integer amount);
+
 }
