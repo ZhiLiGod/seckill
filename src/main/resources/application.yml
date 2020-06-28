@@ -30,3 +30,8 @@ spring:
       pool:
         max-active: 50
         min-idle: 20
+
+mq:
+  nameserver:
+    addr: 47.105.202.224:9876
+  topicname: stock
