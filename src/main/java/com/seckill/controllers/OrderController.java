@@ -65,12 +65,6 @@ public class OrderController {
       }
     }
 
-    boolean soldOut = redisTemplate.hasKey("promo_item_sold_out_" + itemId);
-
-    if (soldOut) {
-      throw new BusinessException(BusinessError.STOCK_NOT_ENOUGH);
-    }
-
     String stockLogId = itemService.initStockLog(itemId, amount);
 
     if (!mqProducer.transactionAsyncReduceStock(userDto.getId(), itemId, amount, promoId, stockLogId)) {

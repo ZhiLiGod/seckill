@@ -71,10 +71,19 @@ public class PromoServiceImpl implements PromoService {
     ItemDto item = itemService.getItemById(promo.getItemId());
 
     redisTemplate.opsForValue().set("promo_item_stock_" + item.getId(), item.getStock());
+
+    // set threshold for promo item
+    redisTemplate.opsForValue().set("promo_threshold_count_" + promoId, item.getStock() * 5);
   }
 
   @Override
-  public String generateSecondKillToken(Integer promoId, Integer itemId, Integer userId) {
+  public String generateSecondKillToken(Integer promoId, Integer itemId, Integer userId) throws BusinessException {
+
+    boolean soldOut = redisTemplate.hasKey("promo_item_sold_out_" + itemId);
+
+    if (soldOut) {
+      return null;
+    }
 
     Promo promo = promoMapper.selectByPrimaryKey(promoId);
 
@@ -108,6 +117,13 @@ public class PromoServiceImpl implements PromoService {
     }
 
     String token = UUID.randomUUID().toString().replace("-", "");
+
+    // get promo item threshold
+    long result = redisTemplate.opsForValue().increment("promo_threshold_count_" + promoId, -1);
+
+    if (result < 0) {
+      return null;
+    }
 
     redisTemplate.opsForValue().set("promo_token_" + promoId + "_userId_" + userId + "_itemId_" + itemId, token, 5, TimeUnit.MINUTES);
 

@@ -1,6 +1,7 @@
 package com.seckill.services;
 
 import com.seckill.dtos.PromoDto;
+import com.seckill.errors.BusinessException;
 
 public interface PromoService {
 
@@ -10,6 +11,6 @@ public interface PromoService {
   void publishPromo(Integer promoId);
 
   // generate seckill token
-  String generateSecondKillToken(Integer promoId, Integer itemId, Integer userId);
+  String generateSecondKillToken(Integer promoId, Integer itemId, Integer userId) throws BusinessException;
 
 }
