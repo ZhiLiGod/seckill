@@ -4,13 +4,11 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.seckill.rocketmq.MqProducer;
 import com.seckill.services.ItemService;
+import com.seckill.services.PromoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.*;
 
 import com.seckill.dtos.OrderDto;
 import com.seckill.dtos.UserDto;
@@ -39,9 +37,14 @@ public class OrderController {
   @Autowired
   private RedisTemplate redisTemplate;
 
+  @Autowired
+  private PromoService promoService;
+
   @PostMapping("/create/{itemId}/{amount}/{promoId}")
-  public CommonReturnType createOrder(@PathVariable final Integer itemId, @PathVariable final Integer amount, @PathVariable final Integer promoId)
+  public CommonReturnType createOrder(@PathVariable final Integer itemId,
+    @PathVariable final Integer amount, @PathVariable final Integer promoId, @RequestParam String promoToken)
       throws BusinessException {
+
     Boolean isLogin = (Boolean) httpServletRequest.getSession().getAttribute("IS_LOGIN");
 
     if (isLogin == null || !isLogin) {
@@ -49,7 +52,18 @@ public class OrderController {
     }
 
     UserDto userDto = (UserDto) httpServletRequest.getSession().getAttribute("LOGIN_USER");
-    // OrderDto orderDto = orderService.createOrder(userDto.getId(), itemId, amount, promoId);
+
+    if (promoId != null) {
+      String promoTokenInRedis = (String) redisTemplate.opsForValue().get("promo_token_" + promoId + "_userId_" + userDto.getId() + "_itemId_" + itemId);
+
+      if (promoTokenInRedis == null) {
+        throw new BusinessException(BusinessError.PARAMETER_VALIDATION_ERROR);
+      }
+
+      if (!promoTokenInRedis.equals(promoToken)) {
+        throw new BusinessException(BusinessError.PARAMETER_VALIDATION_ERROR);
+      }
+    }
 
     boolean soldOut = redisTemplate.hasKey("promo_item_sold_out_" + itemId);
 
@@ -64,6 +78,24 @@ public class OrderController {
     }
 
     return CommonReturnType.create(null);
+  }
+
+  @PostMapping("/generate/token/{itemId}/{promoId}")
+  public CommonReturnType generateToken(@PathVariable Integer itemId, @PathVariable Integer promoId) throws BusinessException {
+    Boolean isLogin = (Boolean) httpServletRequest.getSession().getAttribute("IS_LOGIN");
+
+    if (isLogin == null || !isLogin) {
+      throw new BusinessException(BusinessError.USER_NOT_LOGIN);
+    }
+
+    UserDto userDto = (UserDto) httpServletRequest.getSession().getAttribute("LOGIN_USER");
+    String promoToken = promoService.generateSecondKillToken(promoId, itemId, userDto.getId());
+
+    if (promoToken == null) {
+      throw new BusinessException(BusinessError.UNKNOWN_ERROR);
+    }
+
+    return CommonReturnType.create(promoToken);
   }
 
 }

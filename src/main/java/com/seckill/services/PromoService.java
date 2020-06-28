@@ -9,4 +9,7 @@ public interface PromoService {
   // publish promo
   void publishPromo(Integer promoId);
 
+  // generate seckill token
+  String generateSecondKillToken(Integer promoId, Integer itemId, Integer userId);
+
 }

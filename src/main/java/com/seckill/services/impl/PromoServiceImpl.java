@@ -3,9 +3,15 @@ package com.seckill.services.impl;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import com.seckill.dtos.ItemDto;
+import com.seckill.dtos.UserDto;
+import com.seckill.enums.BusinessError;
+import com.seckill.errors.BusinessException;
 import com.seckill.services.ItemService;
+import com.seckill.services.UserService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -30,6 +36,9 @@ public class PromoServiceImpl implements PromoService {
 
   @Autowired
   private RedisTemplate redisTemplate;
+
+  @Autowired
+  private UserService userService;
 
   @Override
   public PromoDto getPromoByItemId(Integer itemId) {
@@ -62,6 +71,47 @@ public class PromoServiceImpl implements PromoService {
     ItemDto item = itemService.getItemById(promo.getItemId());
 
     redisTemplate.opsForValue().set("promo_item_stock_" + item.getId(), item.getStock());
+  }
+
+  @Override
+  public String generateSecondKillToken(Integer promoId, Integer itemId, Integer userId) {
+
+    Promo promo = promoMapper.selectByPrimaryKey(promoId);
+
+    if (promo == null) {
+      return null;
+    }
+
+    PromoDto promoDto = convertToPromoDto(promo);
+    if (LocalDateTime.now().isBefore(promoDto.getStartDate())) {
+      promoDto.setStatus(PromoStatus.END);
+    } else if (LocalDateTime.now().isAfter(promoDto.getStartDate())) {
+      promoDto.setStatus(PromoStatus.NOT_START_YET);
+    } else {
+      promoDto.setStatus(PromoStatus.PROCESSING);
+    }
+
+    if (!PromoStatus.PROCESSING.equals(promoDto.getStatus())) {
+      return null;
+    }
+
+    ItemDto itemDto = itemService.getItemByIdInCache(itemId);
+
+    if (itemDto == null) {
+      return null;
+    }
+
+    UserDto userDto = userService.getUserByIdInCache(userId);
+
+    if (userDto == null) {
+      return null;
+    }
+
+    String token = UUID.randomUUID().toString().replace("-", "");
+
+    redisTemplate.opsForValue().set("promo_token_" + promoId + "_userId_" + userId + "_itemId_" + itemId, token, 5, TimeUnit.MINUTES);
+
+    return token;
   }
 
   private PromoDto convertToPromoDto(Promo promo) {
