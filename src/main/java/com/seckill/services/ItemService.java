@@ -26,4 +26,6 @@ public interface ItemService {
   // rollback stock
   boolean increaseStock(Integer itemId, Integer amount);
 
+  String initStockLog(Integer itemId, Integer amount);
+
 }

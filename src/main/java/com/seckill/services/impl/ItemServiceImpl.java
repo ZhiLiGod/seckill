@@ -2,9 +2,11 @@ package com.seckill.services.impl;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import com.seckill.dtos.StockLogDto;
 import com.seckill.rocketmq.MqProducer;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
@@ -102,13 +104,11 @@ public class ItemServiceImpl implements ItemService {
     // reduce from redis
     long result = redisTemplate.opsForValue().increment("promo_item_stock_" + itemId, (amount * -1));
 
-    if (result >= 0) {
-//      boolean isSuccess = producer.asyncReduceStock(itemId, amount);
-//
-//      if (!isSuccess) {
-//        redisTemplate.opsForValue().increment("promo_item_stock_" + itemId, amount);
-//      }
-
+    if (result > 0) {
+      return true;
+    } else if (result == 0) {
+      // set sold out flag
+      redisTemplate.opsForValue().set("promo_item_sold_out_" + itemId, "true");
       return true;
     } else {
       increaseStock(itemId, amount);
@@ -144,6 +144,18 @@ public class ItemServiceImpl implements ItemService {
   public boolean increaseStock(Integer itemId, Integer amount) {
     redisTemplate.opsForValue().increment("promo_item_stock_" + itemId, amount);
     return true;
+  }
+
+  @Override
+  @Transactional
+  public String initStockLog(Integer itemId, Integer amount) {
+    StockLogDto stockLogDto = new StockLogDto();
+    stockLogDto.setAmount(amount);
+    stockLogDto.setItemId(itemId);
+    stockLogDto.setId(UUID.randomUUID().toString().replace("-", ""));
+    stockLogDto.setStatus(1);
+
+    return stockLogDto.getId();
   }
 
   private Item convertItemFromItemDto(@NonNull ItemDto dto) {

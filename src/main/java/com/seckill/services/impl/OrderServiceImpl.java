@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+import com.seckill.dtos.*;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -12,11 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.seckill.dao.OrderInfoMapper;
 import com.seckill.dao.SequenceInfoMapper;
-import com.seckill.dtos.ItemDto;
-import com.seckill.dtos.OrderDto;
-import com.seckill.dtos.PromoDto;
 import com.seckill.dtos.PromoDto.PromoStatus;
-import com.seckill.dtos.UserDto;
 import com.seckill.enums.BusinessError;
 import com.seckill.errors.BusinessException;
 import com.seckill.models.OrderInfo;
@@ -50,7 +47,7 @@ public class OrderServiceImpl implements OrderService {
 
   @Override
   @Transactional
-  public OrderDto createOrder(Integer userId, Integer itemId, Integer amount, Integer promoId) throws BusinessException {
+  public OrderDto createOrder(Integer userId, Integer itemId, Integer amount, Integer promoId, String stockLogId) throws BusinessException {
     // validate
 //    ItemDto itemDto = itemService.getItemById(itemId);
     ItemDto itemDto = itemService.getItemByIdInCache(itemId);
@@ -111,20 +108,31 @@ public class OrderServiceImpl implements OrderService {
     // increase sales
     itemService.increaseSales(itemId, amount);
 
-    TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+    // update stock log to success
+    StockLogDto stockLogDto = new StockLogDto();
 
-      @Override
-      public void afterCommit() {
-        // async update stock
-        boolean mqResult = itemService.asyncReduceStock(itemId, amount);
+    if (stockLogDto == null) {
+      throw new BusinessException(BusinessError.UNKNOWN_ERROR);
+    }
 
-//        if (!mqResult) {
-//          itemService.increaseStock(itemId, amount);
-//          throw new BusinessException(BusinessError.MQ_SEND_FAILED);
-//        }
-      }
+    stockLogDto.setStatus(2);
+    // update
+    // save(stockLogDto)
 
-    });
+//    TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+//
+//      @Override
+//      public void afterCommit() {
+//        // async update stock
+//        boolean mqResult = itemService.asyncReduceStock(itemId, amount);
+//
+////        if (!mqResult) {
+////          itemService.increaseStock(itemId, amount);
+////          throw new BusinessException(BusinessError.MQ_SEND_FAILED);
+////        }
+//      }
+//
+//    });
 
 
 
