@@ -2,10 +2,12 @@ package com.seckill.services.impl;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +41,9 @@ public class ItemServiceImpl implements ItemService {
 
   @Autowired
   private PromoService promoService;
+
+  @Autowired
+  private RedisTemplate redisTemplate;
 
   @Override
   @Transactional
@@ -85,14 +90,30 @@ public class ItemServiceImpl implements ItemService {
   @Override
   @Transactional
   public boolean reduceStock(Integer itemId, Integer amount) {
-    int affectedRow = stockMapper.reduceStock(itemId, amount);
-    return affectedRow > 0;
+//    int affectedRow = stockMapper.reduceStock(itemId, amount);
+    // reduce from redis
+    long result = redisTemplate.opsForValue().increment("promo_item_stock_" + itemId, (amount * -1));
+
+    return result >= 0;
   }
 
   @Override
   @Transactional
   public void increaseSales(Integer itemId, Integer amount) {
     itemMapper.increaseSales(itemId, amount);
+  }
+
+  @Override
+  public ItemDto getItemByIdInCache(Integer id) {
+
+    ItemDto item = (ItemDto) redisTemplate.opsForValue().get("item_validate_" + id);
+
+    if (item == null) {
+      item = getItemById(id);
+      redisTemplate.opsForValue().set("item_validate_" + id, item, 10, TimeUnit.MINUTES);
+    }
+
+    return item;
   }
 
   private Item convertItemFromItemDto(@NonNull ItemDto dto) {

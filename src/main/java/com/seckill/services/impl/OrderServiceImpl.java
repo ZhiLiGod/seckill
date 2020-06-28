@@ -50,13 +50,15 @@ public class OrderServiceImpl implements OrderService {
   @Transactional
   public OrderDto createOrder(Integer userId, Integer itemId, Integer amount, Integer promoId) throws BusinessException {
     // validate
-    ItemDto itemDto = itemService.getItemById(itemId);
+//    ItemDto itemDto = itemService.getItemById(itemId);
+    ItemDto itemDto = itemService.getItemByIdInCache(itemId);
 
     if (itemDto == null) {
       throw new BusinessException(BusinessError.PARAMETER_VALIDATION_ERROR, "Invalid Item Id");
     }
 
-    UserDto userDto = userService.getUserById(userId);
+//    UserDto userDto = userService.getUserById(userId);
+    UserDto userDto = userService.getUserByIdInCache(userId);
 
     if (userDto == null) {
       throw new BusinessException(BusinessError.PARAMETER_VALIDATION_ERROR, "Invalid User Id");

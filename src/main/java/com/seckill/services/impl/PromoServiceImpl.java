@@ -4,8 +4,11 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 
+import com.seckill.dtos.ItemDto;
+import com.seckill.services.ItemService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import com.seckill.dao.PromoMapper;
@@ -21,6 +24,12 @@ public class PromoServiceImpl implements PromoService {
 
   @Autowired
   private PromoMapper promoMapper;
+
+  @Autowired
+  private ItemService itemService;
+
+  @Autowired
+  private RedisTemplate redisTemplate;
 
   @Override
   public PromoDto getPromoByItemId(Integer itemId) {
@@ -40,6 +49,19 @@ public class PromoServiceImpl implements PromoService {
     }
 
     return promoDto;
+  }
+
+  @Override
+  public void publishPromo(Integer promoId) {
+    Promo promo = promoMapper.selectByPrimaryKey(promoId);
+
+    if (promo.getItemId() == null || promo.getItemId() == 0) {
+      return;
+    }
+
+    ItemDto item = itemService.getItemById(promo.getItemId());
+
+    redisTemplate.opsForValue().set("promo_item_stock_" + item.getId(), item.getStock());
   }
 
   private PromoDto convertToPromoDto(Promo promo) {

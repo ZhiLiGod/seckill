@@ -17,4 +17,7 @@ public interface ItemService {
 
   void increaseSales(Integer itemId, Integer amount);
 
+  // validate item and promo
+  ItemDto getItemByIdInCache(Integer id);
+
 }

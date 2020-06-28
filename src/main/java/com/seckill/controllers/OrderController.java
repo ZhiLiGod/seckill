@@ -1,4 +1,4 @@
-package com.seckill.services.impl;
+package com.seckill.controllers;
 
 import javax.servlet.http.HttpServletRequest;
 

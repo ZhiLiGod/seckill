@@ -1,6 +1,7 @@
 package com.seckill.controllers;
 
 import com.seckill.services.CacheService;
+import com.seckill.services.PromoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -29,10 +30,13 @@ public class ItemController {
 
   private final CacheService cacheService;
 
-  public ItemController(ItemService itemService, RedisTemplate redisTemplate, CacheService cacheService) {
+  private final PromoService promoService;
+
+  public ItemController(ItemService itemService, RedisTemplate redisTemplate, CacheService cacheService, PromoService promoService) {
     this.itemService = itemService;
     this.redisTemplate = redisTemplate;
     this.cacheService = cacheService;
+    this.promoService = promoService;
   }
 
   @PostMapping("/create")
@@ -68,6 +72,12 @@ public class ItemController {
   @GetMapping("/all-items")
   public CommonReturnType getAllItems() {
     return CommonReturnType.create(itemService.listItems());
+  }
+
+  @PostMapping("/publish/promo/{id}")
+  public CommonReturnType publishPromo(@PathVariable Integer id) {
+    promoService.publishPromo(id);
+    return CommonReturnType.create(null);
   }
 
 }

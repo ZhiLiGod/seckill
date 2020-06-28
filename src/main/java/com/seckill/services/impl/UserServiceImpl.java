@@ -5,6 +5,7 @@ import javax.validation.Valid;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +24,8 @@ import com.seckill.validator.ValidatorImpl;
 
 import lombok.NonNull;
 
+import java.util.concurrent.TimeUnit;
+
 @Service
 public class UserServiceImpl implements UserService {
 
@@ -34,6 +37,9 @@ public class UserServiceImpl implements UserService {
 
   @Autowired
   private ValidatorImpl validatorImpl;
+
+  @Autowired
+  private RedisTemplate redisTemplate;
 
   @Override
   public UserDto getUserById(Integer id) {
@@ -107,6 +113,19 @@ public class UserServiceImpl implements UserService {
     if (!StringUtils.equals(up.getEncrptPassword(), loginDto.getPassword())) {
       throw new BusinessException(BusinessError.USER_LOGIN_FAILED);
     }
+  }
+
+  @Override
+  public UserDto getUserByIdInCache(Integer id) {
+
+    UserDto user = (UserDto) redisTemplate.opsForValue().get("user_validate_" + id);
+
+    if (user == null) {
+      user = getUserById(id);
+      redisTemplate.opsForValue().set("user_validate_" + id, user, 10, TimeUnit.MINUTES);
+    }
+
+    return user;
   }
 
 }
