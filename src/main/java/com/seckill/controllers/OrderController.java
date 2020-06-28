@@ -3,6 +3,7 @@ package com.seckill.controllers;
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 
+import com.google.common.util.concurrent.RateLimiter;
 import com.seckill.rocketmq.MqProducer;
 import com.seckill.services.ItemService;
 import com.seckill.services.PromoService;
@@ -46,15 +47,23 @@ public class OrderController {
 
   private ExecutorService executorService;
 
+  private RateLimiter orderCreateRateLimiter;
+
   @PostConstruct
   public void init() {
     executorService = Executors.newFixedThreadPool(20);
+
+    orderCreateRateLimiter = RateLimiter.create(300);
   }
 
   @PostMapping("/create/{itemId}/{amount}/{promoId}")
   public CommonReturnType createOrder(@PathVariable final Integer itemId,
     @PathVariable final Integer amount, @PathVariable final Integer promoId, @RequestParam String promoToken)
       throws BusinessException {
+
+    if (!orderCreateRateLimiter.tryAcquire()) {
+      throw new BusinessException(BusinessError.RATE_LIMITER_ERROR);
+    }
 
     Boolean isLogin = (Boolean) httpServletRequest.getSession().getAttribute("IS_LOGIN");
 
@@ -78,19 +87,14 @@ public class OrderController {
 
     // use queue to reduce huge requests (队列泄洪)
     // handle 20 requests same time
-    Future<Object> future = executorService.submit(new Callable<Object>() {
+    Future<Object> future = executorService.submit(() -> {
+      String stockLogId = itemService.initStockLog(itemId, amount);
 
-      @Override
-      public Object call() throws Exception {
-        String stockLogId = itemService.initStockLog(itemId, amount);
-
-        if (!mqProducer.transactionAsyncReduceStock(userDto.getId(), itemId, amount, promoId, stockLogId)) {
-          throw new BusinessException(BusinessError.UNKNOWN_ERROR, "Place order failed");
-        }
-
-        return null;
+      if (!mqProducer.transactionAsyncReduceStock(userDto.getId(), itemId, amount, promoId, stockLogId)) {
+        throw new BusinessException(BusinessError.UNKNOWN_ERROR, "Place order failed");
       }
 
+      return null;
     });
 
     try {

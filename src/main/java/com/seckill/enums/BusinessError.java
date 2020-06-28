@@ -10,7 +10,8 @@ public enum BusinessError implements CommonError {
   USER_LOGIN_FAILED(20002, "Invalid Telephone or Password"),
   USER_NOT_LOGIN(20003, "User Not Login"),
   STOCK_NOT_ENOUGH(30001, "Stock Not Enough"),
-  MQ_SEND_FAILED(30002, "Stock async message failed");
+  MQ_SEND_FAILED(30002, "Stock async message failed"),
+  RATE_LIMITER_ERROR(30003, "Hit item, please try again later");
   // @formatter:on
 
   private int errCode;
